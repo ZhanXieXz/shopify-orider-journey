@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eee</title>
+    <style>
+        :root {
+            --primary-color: #008060; /* Shopify Green */
+            --bg-color: #f6f6f7;
+            --card-bg: #ffffff;
+            --text-color: #202223;
+            --border-color: #d2d5d8;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        /* 搜索框区域 */
+        .search-box {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 1px var(--primary-color);
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* 结果区域 */
+        #resultArea {
+            display: none; /* 默认隐藏 */
+        }
+
+        /* 摘要卡片 */
+        .summary-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            text-align: center;
+        }
+
+        .stat-item h3 {
+            margin: 0 0 5px 0;
+            font-size: 24px;
+            color: var(--primary-color);
+        }
+
+        .stat-item p {
+            margin: 0;
+            font-size: 14px;
+            color: #6d7175;
+        }
+
+        /* 时间轴样式 */
+        .timeline {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .timeline-header {
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-left: 30px;
+            margin-bottom: 30px;
+            border-left: 2px solid var(--border-color);
+        }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+            border-left: 2px solid transparent;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -9px;
+            top: 0;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            border: 3px solid #fff;
+            box-shadow: 0 0 0 1px var(--border-color);
+        }
+
+        .timeline-content {
+            background: #fafbfb;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .timeline-time {
+            font-size: 12px;
+            color: #6d7175;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .timeline-row {
+            margin-bottom: 8px;
+            font-size: 14px;
+            line-height: 1.5;
+            word-wrap: break-word; /* 防止长链接撑破容器 */
+        }
+
+        .label {
+            font-weight: 600;
+            color: #444;
+            display: inline-block;
+            width: 80px;
+            flex-shrink: 0;
+        }
+
+        a {
+            color: #2c6ecb;
+            text-decoration: none;
+            word-break: break-all;
+        }
+        a:hover { text-decoration: underline; }
+
+        .error-msg {
+            color: #d82c0d;
+            background: #fbeae5;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* UTM 标签样式 */
+        .utm-tags {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed #e1e3e5;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .utm-tag {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background-color: #e4e5e7;
+            color: #444;
+            border: 1px solid #c9cccf;
+            display: inline-flex;
+            align-items: center;
+        }
+        .utm-key {
+            color: #666;
+            margin-right: 4px;
+            font-weight: normal;
+        }
+        .utm-val {
+            font-weight: 600;
+            color: #000;
+        }
+        /* 高亮 Campaign 参数，因为它通常最重要 */
+        .utm-tag.campaign {
+            background-color: #e3f1df;
+            border-color: #bad8b3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 style="text-align: center; margin-bottom: 30px;">Shopify 订单全链路追踪</h2>
+    
+    <div class="search-box">
+        <input type="text" id="orderIdInput" placeholder="输入订单 ID (例如: 5629123456789)" />
+        <button id="searchBtn" onclick="fetchData()">查询</button>
+    </div>
+
+    <div id="errorArea" class="error-msg"></div>
+
+    <div id="resultArea">
+        <div class="summary-card">
+            <div class="stat-item">
+                <h3 id="displayOrderName">-</h3>
+                <p>订单号</p>
+            </div>
+            <div class="stat-item">
+                <h3 id="displayVisits">-</h3>
+                <p>总访问次数</p>
+            </div>
+            <div class="stat-item">
+                <h3 id="displayDays">-</h3>
+                <p>转化耗时(天)</p>
+            </div>
+        </div>
+
+        <div class="timeline">
+            <h3 class="timeline-header">访问历史详情 (Customer Journey)</h3>
+            <div id="timelineList">
+                </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ============================================
+    // 请在这里替换你的 Vercel 接口地址
+    // ============================================
+    const API_URL = 'https://tag-express.vercel.app/api/get-order-jouyney'; 
+
+    async function fetchData() {
+        const orderId = document.getElementById('orderIdInput').value.trim();
+        const resultArea = document.getElementById('resultArea');
+        const errorArea = document.getElementById('errorArea');
+        const btn = document.getElementById('searchBtn');
+
+        // 重置状态
+        errorArea.style.display = 'none';
+        resultArea.style.display = 'none';
+        
+        if (!orderId) {
+            showError("请输入订单 ID");
+            return;
+        }
+
+        // UI Loading 状态
+        btn.innerText = "查询中...";
+        btn.disabled = true;
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ orderId: orderId })
+            });
+
+            const data = await response.json();
+
+            // 恢复按钮
+            btn.innerText = "查询";
+            btn.disabled = false;
+
+            if (!response.ok) {
+                throw new Error(data.error || "请求失败，请检查网络或 ID");
+            }
+
+            if (!data.exists) {
+                showError("未找到该订单，请检查 ID 是否正确");
+                return;
+            }
+
+            if (!data.hasJourney) {
+                showError(`找到订单 ${data.orderName}，但暂时没有归因数据 (可能是刚创建)`);
+                return;
+            }
+
+            // 渲染数据
+            renderData(data);
+
+        } catch (error) {
+            btn.innerText = "查询";
+            btn.disabled = false;
+            showError(error.message);
+        }
+    }
+
+    function renderData(data) {
+    const history = data.journey.history || [];
+    
+    // 1. 提取并排序（确保概览路径按时间先后展示）
+    const sortedHistory = [...history].sort((a, b) => new Date(a.time) - new Date(b.time));
+    const sourcePathList = sortedHistory.map(visit => {
+        return (visit.utm && visit.utm.source) ? visit.utm.source : '-';
+    });
+
+    // 2. 填充摘要卡片的基础数据
+    document.getElementById('displayOrderName').innerText = data.orderName;
+    document.getElementById('displayVisits').innerText = data.journey.summary.totalVisits;
+    document.getElementById('displayDays').innerText = data.journey.summary.daysToConversion;
+
+    // 3. 在摘要卡片中插入/更新“全路径概览”
+    updateSourcePathOverview(sourcePathList);
+
+    // 4. 渲染下方详细的时间轴（保留所有原始信息）
+    renderDetailedTimeline(history);
+
+    document.getElementById('resultArea').style.display = 'block';
+}
+
+// 辅助函数 A：在顶部卡片展示“全路径标签”
+function updateSourcePathOverview(list) {
+    let pathWrapper = document.getElementById('pathWrapper');
+    if (!pathWrapper) {
+        const card = document.querySelector('.summary-card');
+        pathWrapper = document.createElement('div');
+        pathWrapper.id = 'pathWrapper';
+        pathWrapper.style.cssText = "grid-column: 1 / span 3; margin-top: 15px; padding-top: 15px; border-top: 1px solid #f0f0f0; text-align: left;";
+        pathWrapper.innerHTML = `
+            <p style="margin:0 0 10px 0; font-size:12px; color:#6d7175; font-weight:bold; text-transform:uppercase;">完整路径</p>
+            <div id="pathTagContainer" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;"></div>
+        `;
+        card.appendChild(pathWrapper);
+    }
+
+    const container = document.getElementById('pathTagContainer');
+    container.innerHTML = list.map((s, index) => `
+        <span style="display:inline-flex; align-items:center;">
+            <b style="background:#e3f1df; color:#008060; padding:3px 8px; border-radius:4px; font-size:13px; border:1px solid #bad8b3;">${s}</b>
+            ${index < list.length - 1 ? '<span style="margin:0 4px; color:#ccc;">→</span>' : ''}
+        </span>
+    `).join('');
+}
+
+// 辅助函数 B：渲染下方详细的时间轴列表（保留原有详情）
+function renderDetailedTimeline(history) {
+    const listContainer = document.getElementById('timelineList');
+    listContainer.innerHTML = ''; 
+
+    // 这里按照时间倒序排列（最新的在最上面），符合时间轴阅读习惯
+    const displayHistory = [...history].sort((a, b) => new Date(b.time) - new Date(a.time));
+
+    displayHistory.forEach((visit) => {
+        const item = document.createElement('div');
+        item.className = 'timeline-item';
+        
+        const date = new Date(visit.time);
+        const timeStr = date.toLocaleString('zh-CN', { hour12: false });
+
+        // 构建 UTM 详情 HTML
+        let utmDetailHtml = '';
+        if (visit.utm && Object.values(visit.utm).some(v => v)) {
+            utmDetailHtml = `<div class="utm-tags">`;
+            Object.entries(visit.utm).forEach(([key, val]) => {
+                if (val) {
+                    const isCampaign = key === 'campaign';
+                    utmDetailHtml += `<span class="utm-tag ${isCampaign ? 'campaign' : ''}">
+                        <span class="utm-key">${key}:</span><span class="utm-val">${val}</span>
+                    </span>`;
+                }
+            });
+            utmDetailHtml += `</div>`;
+        }
+
+        item.innerHTML = `
+            <div class="timeline-dot"></div>
+            <div class="timeline-time">${timeStr}</div>
+            <div class="timeline-content">
+                <div class="timeline-row">
+                    <span class="label">UTM Source:</span>
+                    <strong style="color:var(--primary-color)">${(visit.utm && visit.utm.source) || '-'}</strong>
+                </div>
+                <div class="timeline-row">
+                    <span class="label">渠道类型:</span>
+                    <span>${visit.source || '-'}</span>
+                </div>
+                <div class="timeline-row">
+                    <span class="label">落地页面:</span>
+                    <a href="${visit.landing}" target="_blank">${getShortPath(visit.landing)}</a>
+                </div>
+                <div class="timeline-row">
+                    <span class="label">Referrer:</span>
+                    <span style="color:#6d7175; font-size:12px;">${visit.referrer || '-'}</span>
+                </div>
+                ${utmDetailHtml}
+            </div>`;
+        listContainer.appendChild(item);
+    });
+}
+
+    function showError(msg) {
+        const el = document.getElementById('errorArea');
+        el.innerText = msg;
+        el.style.display = 'block';
+    }
+
+    // 辅助函数：判断字符串是否是 URL
+    function isUrl(string) {
+        try {
+            new URL(string);
+            return true;
+        } catch (_) {
+            return false;  
+        }
+    }
+
+    // 辅助函数：简化显示 URL (只显示路径部分，避免太长)
+    function getShortPath(urlStr) {
+        try {
+            const url = new URL(urlStr);
+            // 显示 pathname 和前20个字符的 query string
+            return url.pathname + (url.search.length > 30 ? url.search.substring(0,30)+'...' : url.search);
+        } catch (e) {
+            return urlStr;
+        }
+    }
+</script>
+
+</body>
+</html>
